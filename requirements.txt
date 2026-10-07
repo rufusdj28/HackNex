@@ -1,0 +1,11 @@
+# PyTorch is installed separately from the CUDA wheel index; see README.md.
+torch==2.5.1+cu124
+torchvision==0.20.1+cu124
+nvidia-cuda-nvrtc-cu12==12.4.127
+simple-lama-inpainting
+Pillow==9.5.0
+numpy==1.26.4
+opencv-python==4.11.0.86
+scikit-image==0.24.0
+gradio==5.49.1
+onnxruntime-gpu==1.30.0

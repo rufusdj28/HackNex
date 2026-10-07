@@ -1,0 +1,28 @@
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# All downloaded/pretrained models
+models/
+
+# Runtime / generated data
+data/input/
+data/output/
+
+# Logs
+*.log
+
+# Model file formats
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.safetensors
+*.whl
+
+# Environment / IDE
+.env
+.vscode/
+.idea/
