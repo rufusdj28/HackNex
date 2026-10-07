@@ -1,104 +1,87 @@
-# PS06 StructureGuard — Structure-Preserving AI Scene Reconstruction
+<div align="center">
 
-Generative computer vision and scene reconstruction for HackNex 2026 (HNX26PSI06).
-Reconstructs damaged or missing regions of an image while preserving 100% of the undamaged areas outside the damage mask.
+# ◈ ReScene
 
-Mask convention: white (`255`) means reconstruct; black (`0`) means preserve untouched.
+### **Situation-Aware AI Scene Reconstruction**
 
----
+**Reconstruct what is missing. Preserve what isn't.**
 
-## Key Capabilities
+[![HackNex 2026](https://img.shields.io/badge/HackNex-2026-111827?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rufusdj28/HackNex)
+[![Problem Statement](https://img.shields.io/badge/PS06-Scene%20Reconstruction-2563EB?style=for-the-badge)](#)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](#)
+[![PyTorch](https://img.shields.io/badge/PyTorch-CUDA-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](#)
+[![License](https://img.shields.io/badge/License-See%20Components-6B7280?style=for-the-badge)](#external-components)
 
-1. **Context-Aware Cropped Inpainting:**
-   - Instead of naively shrinking the entire image into 512×512, StructureGuard extracts the damage bounding box and expands it with an adaptive visual context margin.
-   - Prevents spatial detail loss and geometric distortion on high-resolution images, fine textures, building facades, and small damaged areas.
-   - Symmetrically balances crop aspect ratios using surrounding image content to avoid wasting model resolution on empty padding.
-   - Preserves thin masks, scratches, and wires during scaling without subpixel loss.
+<br>
 
-2. **Full-Resolution Mask-Only Compositing:**
-   - Reconstructed crops are unpadded, resized back to original crop coordinates, and composited strictly inside the original damage mask.
-   - Every pixel outside the damage mask remains untouched from the source image.
+> **ReScene doesn't blindly inpaint. It analyzes the situation first.**
 
-3. **Preservation Guard:**
-   - Evaluates empirical pixel differences, structural similarity (SSIM), edge consistency (Canny), and color fidelity exclusively in the unmasked region.
-   - Produces a verifiable Preservation Score derived mathematically from actual image data (no hardcoded scores).
+<br>
 
-4. **Contextual Reconstruction Confidence:**
-   - Computes a contextual confidence score derived from damage area ratio, surrounding context availability, boundary complexity, seam continuity, and texture variance consistency.
-
-5. **Debug & Alignment Inspector:**
-   - Logs and displays full transformation coordinates: original dimensions, mask bounding box, context crop bounds, scale factors, padding offsets, and model input size.
+</div>
 
 ---
 
-## Setup on Windows
+## ◇ The Idea
 
-The project uses the isolated `.venv` environment. Activate it with:
+Traditional image inpainting asks one question:
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
+> **"What should I generate here?"**
 
-Dependencies installed in `.venv`:
-- PyTorch 2.5.1 + CUDA 12.4
-- ONNX Runtime 1.30.0
-- OpenCV 4.11.0.86
-- Scikit-Image 0.24.0
-- Gradio 5.49.1
-- Pillow 9.5.0
+ReScene asks a more useful question:
 
----
+> **"What kind of scene am I reconstructing?"**
 
-## Quality Verification Tests (9 Test Cases)
+Before reconstruction, ReScene analyzes the damaged region and its surrounding
+visual context — geometry, edges, lines, texture, orientation, and complexity.
 
-Run the comprehensive quality test suite covering all 9 required verification scenarios:
+It then uses that information to determine an appropriate reconstruction
+strategy.
 
-```powershell
-python scripts/run_quality_tests.py
-```
-
-Scenarios evaluated:
-- **TEST 1:** Plain background
-- **TEST 2:** Detailed high-frequency texture
-- **TEST 3:** Building facade / straight structural lines
-- **TEST 4:** Object removal
-- **TEST 5:** Small mask on large 720p HD image
-- **TEST 6:** Large mask (>60% area) with full-image fallback
-- **TEST 7:** Mask touching image borders (x=0, y=0)
-- **TEST 8:** Non-square panoramic image (3:1 aspect ratio)
-- **TEST 9:** Anime / illustration line-art
-
-All tests verify:
-- Output dimensions strictly match original dimensions.
-- Bit-for-bit unmasked pixel preservation (`mismatch_count == 0`).
-- Preservation score is 100.0%.
-- Reconstruction Confidence is calculated and reported.
-- Artifacts saved to `data/output/tests/`.
-
----
-
-## Gradio Web Application
-
-Launch the interactive Gradio UI:
-
-```powershell
-python app/main.py
-```
-
-1. Upload an image.
-2. Paint the damaged region with the white brush.
-3. Click **Reconstruct**.
-4. View Original, Mask, Reconstructed results, Damage Analysis, Preservation Guard metrics, Contextual Confidence, and expandable Spatial Alignment Details.
-5. Download the reconstructed image.
-
----
-
-## PyTorch Smoke Test
-
-The original PyTorch smoke test remains available and unchanged:
-
-```powershell
-python scripts/create_sample.py
-python scripts/test_inpainting.py
-```
-Output is saved to `data/output/sample_reconstructed.png`.
+```text
+                    ┌──────────────────┐
+                    │    INPUT IMAGE   │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │   DAMAGE MASK    │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                  ┌───────────────────────┐
+                  │   SITUATION ANALYSIS  │
+                  │                       │
+                  │ Geometry • Edges      │
+                  │ Lines • Texture       │
+                  │ Orientation • Context │
+                  └───────────┬───────────┘
+                              │
+                              ▼
+                  ┌───────────────────────┐
+                  │  RECONSTRUCTION       │
+                  │      PLANNER          │
+                  └───────────┬───────────┘
+                              │
+                 ┌────────────┼────────────┐
+                 ▼            ▼            ▼
+              ┌──────┐    ┌──────┐    ┌──────┐
+              │ LaMa │    │ ZITS │    │ MAT  │
+              └───┬──┘    └───┬──┘    └───┬──┘
+                  └────────────┼────────────┘
+                               ▼
+                    ┌──────────────────┐
+                    │ MASK-ONLY        │
+                    │ COMPOSITING      │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ PRESERVATION     │
+                    │     GUARD        │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │ FINAL RECONSTRUCTION │
+                    └──────────────────┘
